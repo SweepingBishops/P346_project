@@ -4,10 +4,9 @@ import numpy as np
 from random import random as random_
 from time import time
 from draw import *
-N = 50
-P = 0.52
 
 class Node(Sequence):
+  '''Depreciated.'''
   def __init__(self,pos):
     self.pos = pos
     self.neighbors = list()
@@ -19,31 +18,39 @@ class Node(Sequence):
     return 2  # If the length is not 2 something is seriously wrong.
 
 class Graph:
-  def __init__(self,nodes):
-    self.nodes = nodes
+  def __init__(self,nodes, P):
+    self.nodes = set(nodes)
+    self.not_clustered = set(nodes)
     self.clusters = list()
-    self.GenerateEdges()
+    self.neighbors = dict.fromkeys(nodes)
+    self.GenerateEdges(P)
 
-  def GenerateEdges(self):
-    for pos in self.nodes:
-      x, y = pos
+  def GenerateEdges(self,P):
+    for node in self.nodes:
+      x, y = node
       neighbors = list()
       if random_() <= P:
         neighbors.append(((x+1)%N,y%N))
       if random_() <= P:
         neighbors.append((x%N,(y+1)%N))
-      for neighbor_pos in neighbors:
-        if self.nodes.get(neighbor_pos) is None:
-          neighbors.remove(neighbor_pos)
-      self.nodes.get(pos).neighbors.extend(neighbors)
       for neighbor in neighbors:
-        self.nodes.get(neighbor).neighbors.append(pos)
+        if neighbor not in self.nodes:
+          neighbors.remove(neighbor)
+      if self.neighbors[node]:
+        self.neighbors[node].extend(neighbors)
+      else:
+        self.neighbors[node] = neighbors
+      for neighbor in neighbors:
+        if self.neighbors[neighbor]:
+          self.neighbors[neighbor].append(node)
+        else:
+          self.neighbors[neighbor] = [node]
 
-  def GetNeighbors(self,pos):
-    return self.nodes.get(pos).neighbors
+  def GetNeighbors(self,node):
+    return self.neighbors[node]
 
   def GetNodes(self):
-    return list(self.nodes.keys())
+    return self.nodes
 
   def OldGetClusters(self):
     for pos in self.nodes:
@@ -65,37 +72,42 @@ class Graph:
         self.clusters[cluster].extend(node.neighbors)
     return list(self.clusters.values())
 
-  def FindClusterFromNode(self,pos):
-    cluster = [pos]
-    self.nodes[pos].clustered = True
-    next_neighbors = self.nodes[pos].neighbors
+  def FindClusterFromNode(self,node):
+    cluster = [node]
+    self.not_clustered.remove(node)
+    next_neighbors = self.neighbors[node]
     while next_neighbors:
       cluster.extend(next_neighbors)
-      current_neighbors = next_neighbors.copy()
-      next_neighbors = list()
-      for neighbor in current_neighbors:
-        self.nodes[neighbor].clustered = True
-        for next_neighbor in self.nodes[neighbor].neighbors:
-          if not self.nodes[next_neighbor].clustered:
-            next_neighbors.append(next_neighbor)
+      self.not_clustered.difference_update(next_neighbors)
+      temp = set()
+      for neighbor in next_neighbors:
+        temp.update(self.neighbors[neighbor])
+      next_neighbors = temp.intersection(self.not_clustered)
     return cluster
 
   def GetClusters(self):
-    for pos in self.nodes:
-      if not self.nodes[pos].clustered:
-        self.clusters.append(self.FindClusterFromNode(pos))
+    for node in self.nodes:
+      if node in self.not_clustered:
+        self.clusters.append(self.FindClusterFromNode(node))
     return self.clusters
 
 
-nodes = dict()
+nodes = list()
 start = time()
+N = 1000
 for i in range(N):
   for j in range(N):
-    nodes[(i,j)] = Node((i,j))
-graph = Graph(nodes)
-clusters = graph.GetClusters()
+      nodes.append((i,j))
+P=0.49
+graph1 = Graph(nodes,P)
+clusters = graph1.GetClusters()
+P=0.51
+graph2 = Graph(nodes,P)
+clusters = graph2.GetClusters()
 end = time()
-DrawSquareNetworkBonds(graph,nodelists=clusters,linewidth=2)
+DrawSquareNetworkBonds(graph1,nodelists=graph1.clusters,linewidth=2,imsize=600)
+DrawSquareNetworkBonds(graph2,nodelists=graph2.clusters,linewidth=2,imsize=600)
+#DrawSquareNetworkBonds(graph,linewidth=2,imsize=600)
 print(f"Time taken: {end-start}")
 #graph.clusters = dict()
 #for node in graph.nodes.values():
