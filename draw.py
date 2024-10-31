@@ -1,4 +1,4 @@
-import scipy
+import numpy
 import os
 import random
 import tempfile
@@ -71,14 +71,14 @@ def GenerateCircleGraphImage(graph, imfile, windowSize=600,
     # Create a dictionary that maps nodes to their positions around the circle
     nodePosition = {}
     for index, node in enumerate(all_nodes):
-        theta = 2. * scipy.pi * float(index) / L
-        x = radius * scipy.cos(theta) + center
-        y = radius * scipy.sin(theta) + center
+        theta = 2. * numpy.pi * float(index) / L
+        x = radius * numpy.cos(theta) + center
+        y = radius * numpy.sin(theta) + center
         nodePosition[node] = (x, y)
         draw.ellipse(((x - dotsize / 2, y - dotsize / 2),
                       (x + dotsize / 2, y + dotsize / 2)), fill=color)
-        tx = (radius * 1.1) * scipy.cos(theta) + center
-        ty = (radius * 1.1) * scipy.sin(theta) + center
+        tx = (radius * 1.1) * numpy.cos(theta) + center
+        ty = (radius * 1.1) * numpy.sin(theta) + center
         #draw.text((tx, ty), str(node))
 
     # Draw the lines between the nodes
@@ -151,15 +151,15 @@ def GenerateCircleGraphImageWithWeights(graph, imfile,
         except:
             pass
     for index, node in enumerate(all_nodes):
-        theta = 2. * scipy.pi * float(index) / L
-        x = radius * scipy.sin(theta) + center
-        y = -radius * scipy.cos(theta) + center
+        theta = 2. * numpy.pi * float(index) / L
+        x = radius * numpy.sin(theta) + center
+        y = -radius * numpy.cos(theta) + center
         nodePosition[node] = (x, y)
         if font is not None:
             labelSize = font.getsize(str(node))
-            tx = (radius * 1.1) * scipy.sin(theta) + \
+            tx = (radius * 1.1) * numpy.sin(theta) + \
                 center - 0.1 * labelSize[0]
-            ty = (-radius * 1.1) * scipy.cos(theta) + \
+            ty = (-radius * 1.1) * numpy.cos(theta) + \
                 center - 0.1 * labelSize[1]
             textPosition[node] = (tx, ty)
     for node in all_nodes:
@@ -172,12 +172,12 @@ def GenerateCircleGraphImageWithWeights(graph, imfile,
                 # Thickness of line proportional to edge_scale
                 if (edge_weights):
                     linewidth = linescale * \
-                        scipy.sqrt(edge_weights[
+                        numpy.sqrt(edge_weights[
                             (node, neighbor)] / edge_scale)
                 else:
                     linewidth = linescale
                 # Draw rectangles to get thick lines
-                perpLength = scipy.sqrt((y - yNbr)**2 + (x - xNbr)**2)
+                perpLength = numpy.sqrt((y - yNbr)**2 + (x - xNbr)**2)
                 perpx = ((y - yNbr) / perpLength) * linewidth / 2
                 perpy = (-(x - xNbr) / perpLength) * linewidth / 2
                 polyFromLine = ((m * (x + perpx), m * (y + perpy)),
@@ -190,7 +190,7 @@ def GenerateCircleGraphImageWithWeights(graph, imfile,
         # Make size of dot proportional to square root of weight/L
         # (e.g., small world network betweenness ~ L)
         if (node_weights):
-            dotsize = dotscale * scipy.sqrt(node_weights[node] / node_scale)
+            dotsize = dotscale * numpy.sqrt(node_weights[node] / node_scale)
         else:
             dotsize = dotscale
         draw.ellipse(((m * (x - dotsize / 2), m * (y - dotsize / 2)),
@@ -443,7 +443,7 @@ def DrawTriangularNetworkSites(graph, nodelists=None, L=0,
     white = (255, 255, 255)
     # Basic idea: draw system magnification*big, and shrink at end
     bigHeightx = int(round(magnification * scale * L))
-    bigHeighty = int(round(magnification * scale * L * scipy.sqrt(3.) / 2.))
+    bigHeighty = int(round(magnification * scale * L * numpy.sqrt(3.) / 2.))
     imBig = Image.new('RGB', (bigHeightx, bigHeighty), white)
     draw = ImageDraw.Draw(imBig)
     # Nodes = (ix, iy) running from (0,0) to (L-1,L-1)
@@ -451,18 +451,18 @@ def DrawTriangularNetworkSites(graph, nodelists=None, L=0,
     # Assumes entire row and column of nodes not missing
     color = (0, 0, 0)  # starting color
     # Basis for center of hexagon
-    xhat = magnification * scale * scipy.array([1., 0.])
-    yhat = magnification * scale * scipy.array([1. / 2., scipy.sqrt(3.) / 2.])
+    xhat = magnification * scale * numpy.array([1., 0.])
+    yhat = magnification * scale * numpy.array([1. / 2., numpy.sqrt(3.) / 2.])
     # Shape of polygon
     up = magnification * scale *\
-        scipy.array([0., 1. / scipy.sqrt(3.)])
+        numpy.array([0., 1. / numpy.sqrt(3.)])
     upright = magnification * scale *\
-        scipy.array([1. / 2., 1. / (2. * scipy.sqrt(3.))])
+        numpy.array([1. / 2., 1. / (2. * numpy.sqrt(3.))])
     upleft = magnification * scale *\
-        scipy.array([-1. / 2., 1. / (2. * scipy.sqrt(3.))])
-    hexagon = scipy.array([upright, up, upleft, -upright, -up, -upleft])
+        numpy.array([-1. / 2., 1. / (2. * numpy.sqrt(3.))])
+    hexagon = numpy.array([upright, up, upleft, -upright, -up, -upleft])
     # Periodic boundary condition
-    pbc = magnification * scale * L * scipy.array([1., scipy.sqrt(3.) / 2.])
+    pbc = magnification * scale * L * numpy.array([1., numpy.sqrt(3.) / 2.])
     # Rounding error check
     eps = magnification * scale * 1.e-6
     # Draw clusters
@@ -473,16 +473,16 @@ def DrawTriangularNetworkSites(graph, nodelists=None, L=0,
             draw.polygon(tuple(map(tuple, vertices)), fill=color)
             # Check if polygon crosses boundary
             # Modulo doesn't work for negatives
-            if (not scipy.allclose( vertices % pbc, vertices )) or \
+            if (not numpy.allclose( vertices % pbc, vertices )) or \
                (vertices.min() < 0.):
                 # Plot polygons plus pbc vectors
-                xcPBC = xc + scipy.array([pbc[0], 0.])
+                xcPBC = xc + numpy.array([pbc[0], 0.])
                 vertices = hexagon + xcPBC
                 draw.polygon(tuple(map(tuple, vertices)), fill=color)
-                xcPBC = xc + scipy.array([pbc[0] / 2., pbc[1]])
+                xcPBC = xc + numpy.array([pbc[0] / 2., pbc[1]])
                 vertices = hexagon + xcPBC
                 draw.polygon(tuple(map(tuple, vertices)), fill=color)
-                xcPBC = xc + scipy.array([-pbc[0] / 2., pbc[1]])
+                xcPBC = xc + numpy.array([-pbc[0] / 2., pbc[1]])
                 vertices = hexagon + xcPBC
                 draw.polygon(tuple(map(tuple, vertices)), fill=color)
         # Pick random color for next cluster
@@ -491,8 +491,9 @@ def DrawTriangularNetworkSites(graph, nodelists=None, L=0,
                  random.randint(*colorRange),
                  random.randint(*colorRange))
     heightx = int(round(scale * L))
-    heighty = int(round(scale * L * scipy.sqrt(3.) / 2.))
-    im = imBig.resize((heightx, heighty), Image.ANTIALIAS)
+    heighty = int(round(scale * L * numpy.sqrt(3.) / 2.))
+    #im = imBig.resize((heightx, heighty), Image.ANTIALIAS)
+    im = imBig.resize((heightx, heighty))
     im.save(imfile)
     Display(imfile)
     return im

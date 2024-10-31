@@ -6,7 +6,7 @@ from time import time
 from draw import *
 
 class Node(Sequence):
-  '''Depreciated.'''
+  '''Depreciated'''
   def __init__(self,pos):
     self.pos = pos
     self.neighbors = list()
@@ -18,12 +18,14 @@ class Node(Sequence):
     return 2  # If the length is not 2 something is seriously wrong.
 
 class Graph:
-  def __init__(self,nodes, P):
+  def __init__(self,nodes, P=0.25, random = True):
     self.nodes = set(nodes)
     self.not_clustered = set(nodes)
-    self.clusters = list()
+    self.clusters = None
     self.neighbors = dict.fromkeys(nodes)
-    self.GenerateEdges(P)
+    if random:
+      self.GenerateEdges(P)
+      self.GenerateClusters()
 
   def GenerateEdges(self,P):
     for node in self.nodes:
@@ -33,9 +35,11 @@ class Graph:
         neighbors.append(((x+1)%N,y%N))
       if random_() <= P:
         neighbors.append((x%N,(y+1)%N))
+      temp = list()
       for neighbor in neighbors:
-        if neighbor not in self.nodes:
-          neighbors.remove(neighbor)
+        if neighbor in self.nodes:
+          temp.append(neighbor)
+      neighbors = temp
       if self.neighbors[node]:
         self.neighbors[node].extend(neighbors)
       else:
@@ -85,31 +89,130 @@ class Graph:
       next_neighbors = temp.intersection(self.not_clustered)
     return cluster
 
-  def GetClusters(self):
+  def GenerateClusters(self):
+    self.clusters = list()
     for node in self.nodes:
       if node in self.not_clustered:
         self.clusters.append(self.FindClusterFromNode(node))
     return self.clusters
 
+  @staticmethod
+  def GenerateDual(graph):
+    nodes = graph.nodes.copy()
+    dual = Graph(nodes,random=False)
+    for (x,y) in nodes:
+      neighbors = list()
+      if ((x+1)%N,y%N) not in graph.neighbors[(x,y)]:
+        neighbors.append((x%N,(y-1)%N))
+      if (x%N,(y+1)%N) not in graph.neighbors[(x,y)]:
+        neighbors.append(((x-1)%N,(y)%N))
 
-nodes = list()
+      for neighbor in neighbors.copy():
+        if neighbor not in dual.nodes:
+          neighbors.remove(neighbor)
+      for neighbor in neighbors:
+        assert neighbor in dual.nodes
+
+      if dual.neighbors[(x,y)]:
+        dual.neighbors[(x,y)].extend(neighbors)
+      else:
+        dual.neighbors[(x,y)] = neighbors
+      for neighbor in neighbors:
+        if dual.neighbors[neighbor]:
+          dual.neighbors[neighbor].append((x,y))
+        else:
+          dual.neighbors[neighbor] = [(x,y)]
+    return dual
+
+class TriGraph:
+  def __init__(self,nodes):
+    self.nodes = set(nodes)
+    self.not_clustered = set(nodes)
+    self.clusters = None
+    self.neighbors = dict.fromkeys(nodes)
+    self.GenerateEdges()
+    self.GenerateClusters()
+
+  def GetNodes(self):
+    return list(self.nodes)
+
+  def GenerateEdges(self):
+    for (x,y) in self.nodes:
+      if self.neighbors[(x,y)] is None:
+        self.neighbors[(x,y)] = list()
+      if ((x+1)%N,y) in self.nodes:
+        self.neighbors[(x,y)].append(((x+1)%N,y))
+      if (x,(y+1)%N) in self.nodes:
+        self.neighbors[(x,y)].append((x,(y+1)%N))
+      if ((x-1)%N,(y+1)%N) in self.nodes:
+        self.neighbors[(x,y)].append(((x-1)%N,(y+1)%N))
+
+      for neighbor in self.neighbors[(x,y)]:
+        if self.neighbors[neighbor] is None:
+          self.neighbors[neighbor] = [(x,y)]
+        else:
+          self.neighbors[neighbor].append((x,y))
+
+  def GetEdges(self,node):
+    return self.neighbors[node]
+
+  def FindClusterFromNode(self,node):
+    cluster = [node]
+    self.not_clustered.remove(node)
+    next_neighbors = self.neighbors[node]
+    while next_neighbors:
+      cluster.extend(next_neighbors)
+      self.not_clustered.difference_update(next_neighbors)
+      temp = set()
+      for neighbor in next_neighbors:
+        temp.update(self.neighbors[neighbor])
+      next_neighbors = temp.intersection(self.not_clustered)
+    return cluster
+
+  def GenerateClusters(self):
+    self.clusters = list()
+    for node in self.nodes:
+      if node in self.not_clustered:
+        self.clusters.append(self.FindClusterFromNode(node))
+    return self.clusters
+
+#  start = time()
+#  nodes = list()
+#  N = 1000
+#  PN = 0.75
+#  for i in range(N):
+#    for j in range(N):
+#        if random_() <= PN:
+#          nodes.append((i,j))
+#  
+#  P=0.7
+#  graph1 = Graph(nodes,P)
+#  #P=0.75
+#  #graph2 = Graph(nodes,P)
+#  end = time()
+#  print(f"Time taken: {end-start}")
+#  DrawSquareNetworkBonds(graph1,nodelists=graph1.clusters,linewidth=2,imsize=500)
+#  #DrawSquareNetworkBonds(graph2,nodelists=graph2.clusters,linewidth=2,imsize=500)
+#  
+#  #dual = Graph.GenerateDual(graph1)
+#  #dual_clusters = dual.GetClusters()
+#  #DrawSquareNetworkBonds(dual,nodelists=dual_clusters, imsize=600)
+
 start = time()
+nodes = list()
 N = 1000
+PN = 0.51
 for i in range(N):
   for j in range(N):
+    if random_() <= PN:
       nodes.append((i,j))
-P=0.49
-graph1 = Graph(nodes,P)
-clusters = graph1.GetClusters()
-P=0.51
-graph2 = Graph(nodes,P)
-clusters = graph2.GetClusters()
+tri_graph1 = TriGraph(nodes)
+PN = 0.49
+for i in range(N):
+  for j in range(N):
+    if random_() <= PN:
+      nodes.append((i,j))
+tri_graph = TriGraph(nodes)
 end = time()
-DrawSquareNetworkBonds(graph1,nodelists=graph1.clusters,linewidth=2,imsize=600)
-DrawSquareNetworkBonds(graph2,nodelists=graph2.clusters,linewidth=2,imsize=600)
-#DrawSquareNetworkBonds(graph,linewidth=2,imsize=600)
 print(f"Time taken: {end-start}")
-#graph.clusters = dict()
-#for node in graph.nodes.values():
-#  node.cluster = None
-#clusters = graph.GetClusters()
+DrawTriangularNetworkSites(tri_graph1,tri_graph1.clusters,imsize=500,magnification=1)
