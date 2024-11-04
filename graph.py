@@ -4,6 +4,7 @@ import numpy as np
 from random import random as random_
 from time import time
 from draw import *
+import multiprocessing
 
 class Node(Sequence):
   '''Depreciated'''
@@ -199,20 +200,37 @@ class TriGraph:
 #  #DrawSquareNetworkBonds(dual,nodelists=dual_clusters, imsize=600)
 
 start = time()
-nodes = list()
-N = 1000
+nodes1 = list()
+N = 400
 PN = 0.51
 for i in range(N):
   for j in range(N):
     if random_() <= PN:
-      nodes.append((i,j))
-tri_graph1 = TriGraph(nodes)
+      nodes1.append((i,j))
 PN = 0.49
+nodes2 = list()
 for i in range(N):
   for j in range(N):
     if random_() <= PN:
-      nodes.append((i,j))
-tri_graph = TriGraph(nodes)
+      nodes2.append((i,j))
+nodes = [nodes1,nodes2]
+#tri_graph1 = TriGraph(nodes)
+#tri_graph = TriGraph(nodes)
+pool = multiprocessing.Pool(2)
+graphs = pool.map_async(TriGraph,nodes)
+pool.close()
+pool.join()
+
 end = time()
 print(f"Time taken: {end-start}")
-DrawTriangularNetworkSites(tri_graph1,tri_graph1.clusters,imsize=500,magnification=1)
+graphs = graphs.get()
+start = time()
+
+pool = multiprocessing.Pool()
+for graph in graphs:
+    pool.apply_async(DrawTriangularNetworkSites, args = [graph,graph.clusters], kwds = {'imsize':500, 'magnification':1})
+
+pool.close()
+pool.join()
+end = time()
+print(f"Time taken: {end-start}")
