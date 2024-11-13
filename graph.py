@@ -177,58 +177,67 @@ class TriGraph:
         self.clusters.append(self.FindClusterFromNode(node))
     return self.clusters
 
-#  start = time()
-#  nodes = list()
-#  N = 1000
-#  PN = 0.75
-#  for i in range(N):
-#    for j in range(N):
-#        if random_() <= PN:
-#          nodes.append((i,j))
-#  
-#  P=0.7
-#  graph1 = Graph(nodes,P)
-#  #P=0.75
-#  #graph2 = Graph(nodes,P)
-#  end = time()
-#  print(f"Time taken: {end-start}")
-#  DrawSquareNetworkBonds(graph1,nodelists=graph1.clusters,linewidth=2,imsize=500)
-#  #DrawSquareNetworkBonds(graph2,nodelists=graph2.clusters,linewidth=2,imsize=500)
-#  
-#  #dual = Graph.GenerateDual(graph1)
-#  #dual_clusters = dual.GetClusters()
-#  #DrawSquareNetworkBonds(dual,nodelists=dual_clusters, imsize=600)
+# start = time()
+# nodes = list()
+# N = 1000
+# PN = 0.75
+# for i in range(N):
+#   for j in range(N):
+#       if random_() <= PN:
+#         nodes.append((i,j))
+# 
+# P=0.7
+# graph1 = Graph(nodes,P)
+# #P=0.75
+# #graph2 = Graph(nodes,P)
+# end = time()
+# print(f"Time taken: {end-start}")
+# DrawSquareNetworkBonds(graph1,nodelists=graph1.clusters,linewidth=2,imsize=500)
+# #DrawSquareNetworkBonds(graph2,nodelists=graph2.clusters,linewidth=2,imsize=500)
+# 
+# #dual = Graph.GenerateDual(graph1)
+# #dual_clusters = dual.GetClusters()
+# #DrawSquareNetworkBonds(dual,nodelists=dual_clusters, imsize=600)
 
-start = time()
-nodes1 = list()
-N = 1000
-PN = 0.51
-for i in range(N):
-  for j in range(N):
-    if random_() <= PN:
-      nodes1.append((i,j))
-PN = 0.49
-nodes2 = list()
-for i in range(N):
-  for j in range(N):
-    if random_() <= PN:
-      nodes2.append((i,j))
-nodes = [nodes1,nodes2]
-pool = multiprocessing.Pool()
-graphs = pool.map_async(TriGraph,nodes)
-pool.close()
-pool.join()
+if __name__ == "__main__":
+    start = time()
+    N = 10
+    PN = 0.75
+    P1 = 0.90
+    PN = 0.75
+    P2 = 0.85
 
-end = time()
-print(f"Time taken: {end-start}")
-graphs = graphs.get()
-start = time()
+    nodes1 = list()
+    for i in range(N):
+      for j in range(N):
+        if random_() <= PN:
+          nodes1.append((i,j))
 
-pool = multiprocessing.Pool()
-for graph in graphs:
-    pool.apply_async(DrawTriangularNetworkSites, args = [graph,graph.clusters], kwds = {'imsize':500, 'magnification':1})
+    nodes2 = list()
+    for i in range(N):
+      for j in range(N):
+        if random_() <= PN:
+          nodes2.append((i,j))
 
-pool.close()
-pool.join()
-end = time()
-print(f"Time taken: {end-start}")
+    args = [(nodes1,P1),(nodes2,P2)]
+    pool = multiprocessing.Pool()
+    #graphs = pool.map_async(TriGraph,nodes)
+    graphs = pool.starmap_async(Graph,args)
+    pool.close()
+    pool.join()
+
+    end = time()
+    print(f"Time taken: {end-start}")
+    graphs = graphs.get()
+    print(graphs[0].nodes)
+    start = time()
+
+    pool = multiprocessing.Pool()
+    for graph in graphs:
+        #pool.apply_async(DrawTriangularNetworkSites, args = [graph,graph.clusters], kwds = {'imsize':500, 'magnification':1})
+        pool.apply_async(DrawSquareNetworkBonds, args = [graph,graph.clusters], kwds = {'imsize':500, 'magnification':1})
+
+    pool.close()
+    pool.join()
+    end = time()
+    print(f"Time taken: {end-start}")
