@@ -201,7 +201,7 @@ class TriGraph:
 
 start = time()
 nodes1 = list()
-N = 400
+N = 1000
 PN = 0.51
 for i in range(N):
   for j in range(N):
@@ -214,9 +214,7 @@ for i in range(N):
     if random_() <= PN:
       nodes2.append((i,j))
 nodes = [nodes1,nodes2]
-#tri_graph1 = TriGraph(nodes)
-#tri_graph = TriGraph(nodes)
-pool = multiprocessing.Pool(2)
+pool = multiprocessing.Pool()
 graphs = pool.map_async(TriGraph,nodes)
 pool.close()
 pool.join()
